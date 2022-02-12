@@ -1,0 +1,7 @@
+name: Build and Deploy Python CDK app
+
+on: [push]
+
+env:
+  FORCE_COLOR: "1"
+  CDK_SYNTH_ZIP: cdk-synth-${{ github.ref_name }}-${{ github.sha }}.zip
