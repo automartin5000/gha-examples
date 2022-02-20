@@ -95,7 +95,7 @@ jobs:
 
 
   deploy_int:
-    Name: Int Deploy
+    name: Int Deploy
     runs-on: ubuntu-latest
     needs: build
     environment:
@@ -136,7 +136,7 @@ jobs:
       # TODO: Kick off async performance/int testing
 
   deploy_prod:
-    Name: Prod Deploy
+    name: Prod Deploy
     runs-on: ubuntu-latest
     needs: deploy_int
     environment:
