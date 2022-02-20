@@ -130,7 +130,7 @@ jobs:
         id: cdk_deploy
         run: |
           cdk --app cdk.out/ deploy int --require-approval never --outputs-file cdk_deploy_outputs.json
-          APP_URL=$(jq -r '.. | objects | to_entries | .[] | select(.key == "AppURL") | .value' cdk_deploy_outputs.json)
+          APP_URL=$(jq -r '.. | objects | to_entries | .[] | select(.key == "EndpointURL") | .value' cdk_deploy_outputs.json)
           echo "::set-output name=app_url::$APP_URL"
 
       # TODO: Upload this to somewhere visible
@@ -173,6 +173,6 @@ jobs:
         id: cdk_deploy
         run: |
           cdk --app cdk.out/ deploy prod --require-approval never --outputs-file cdk_deploy_outputs.json
-          APP_URL=$(jq -r '.. | objects | to_entries | .[] | select(.key == "AppURL") | .value' cdk_deploy_outputs.json)
+          APP_URL=$(jq -r '.. | objects | to_entries | .[] | select(.key == "EndpointURL") | .value' cdk_deploy_outputs.json)
           echo "::set-output name=app_url::$APP_URL"
             
