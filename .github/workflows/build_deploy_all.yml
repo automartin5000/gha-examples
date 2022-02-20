@@ -7,14 +7,13 @@ env:
 
 jobs:
   deploy-serverless-example:
-    name: CDK Python Serverless Build/Deploy
     uses: automartin5000/gha-examples/.github/workflows/python_serverless_cdk_deploy.yml@main
     with:
       dir: examples/serverless/
     secrets:
         aws_access_key_id_build: ${{ secrets.AWS_BUILD_DEMO_ACCESS_KEY_ID }}
-        aws_secret_access_key_build: ${{ secrets.AWS_BUILD_DEMO_SECRET_KEY }}
+        aws_secret_key_build: ${{ secrets.AWS_BUILD_DEMO_SECRET_KEY }}
         aws_access_key_id_dev: ${{ secrets.AWS_DEV_DEMO_ACCESS_KEY_ID }}
-        aws_secret_access_key_dev: ${{ secrets.AWS_DEV_DEMO_SECRET_KEY }}
+        aws_secret_key_dev: ${{ secrets.AWS_DEV_DEMO_SECRET_KEY }}
         aws_access_key_id_prod: ${{ secrets.AWS_PROD_DEMO_ACCESS_KEY_ID }}
-        aws_secret_access_key_prod: ${{ secrets.AWS_PROD_DEMO_SECRET_KEY }}
+        aws_secret_key_prod: ${{ secrets.AWS_PROD_DEMO_SECRET_KEY }}
