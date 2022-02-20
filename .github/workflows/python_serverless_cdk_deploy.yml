@@ -33,7 +33,6 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      cdk_s3_bucket: ${{ steps.cdk-upload.outputs.cdk_s3_bucket }}
       cdk_s3_key: ${{ steps.cdk-upload.outputs.cdk_s3_key }}
 
     defaults:
@@ -41,7 +40,6 @@ jobs:
         working-directory: ${{ inputs.dir }}
     environment:
         name: build
-        url: ${{ steps.cdk_deploy.outputs.app_url }}
 
     steps:
       - name: Checkout Code
@@ -93,7 +91,6 @@ jobs:
               cdk_out.zip \
               s3://${{ secrets.deployment_bucket }}/$CDK_OUT_SHA.zip
           echo '::set-output name=cdk_s3_key::$CDK_OUT_SHA.zip'
-          echo '::set-output name=cdk_s3_bucket::${{ secrets.deployment_bucket }}'
 
 
   deploy_int:
@@ -102,7 +99,7 @@ jobs:
     needs: build
     environment:
         name: int
-        url: ${{ steps.cdk-deploy.outputs.app_url }}
+        url: ${{ steps.cdk_deploy.outputs.app_url }}
     steps:
       - name: Configure AWS Environment
         uses: aws-actions/configure-aws-credentials@v1
@@ -116,14 +113,17 @@ jobs:
           npm install -g aws-cdk
 
       - name: Download cdk.out from S3
+        env:
+          BUCKET: ${{ secrets.deployment_bucket }}
+          KEY: ${{ needs.build.cdk_s3_key }}
         run: |
           aws s3 cp \
-              s3://${{ secrets.deployment_bucket }}/${{ needs.build.cdk_s3_key }} \
+              s3://$BUCKET/$KEY \
               cdk.zip
           unzip cdk.zip
 
       - name: CDK Deploy Int
-        id: cdk-deploy
+        id: cdk_deploy
         run: |
           cdk --app cdk.out/ deploy int --require-approval never --outputs-file cdk_deploy_outputs.json
           apt install jq
@@ -157,14 +157,17 @@ jobs:
           npm install -g aws-cdk
 
       - name: Download cdk.out from S3
+        env:
+          BUCKET: ${{ secrets.deployment_bucket }}
+          KEY: ${{ needs.build.cdk_s3_key }}
         run: |
           aws s3 cp \
-              s3://${{ secrets.deployment_bucket }}/${{ needs.build.cdk_s3_key }} \
+              s3://$BUCKET/$KEY \
               cdk.zip
           unzip cdk.zip
 
       - name: CDK Deploy Prod
-        id: cdk-deploy
+        id: cdk_deploy
         run: |
           cdk --app cdk.out/ deploy prod --require-approval never --outputs-file cdk_deploy_outputs.json
           apt install jq
