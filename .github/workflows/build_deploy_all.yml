@@ -6,8 +6,8 @@ env:
   FORCE_COLOR: "1"
 
 jobs:
-  deploy_serverless_example:
-    name: Deploy Serverless Example
-    uses: automartin5000/gha-examples/.github/workflows/python_serverless_cdk_deploy@main
+  deploy-serverless-example:
+    name: CDK Python Serverless Build/Deploy
+    uses: automartin5000/gha-examples/.github/workflows/python_serverless_cdk_deploy.yml@main
     with:
       dir: examples/serverless/
