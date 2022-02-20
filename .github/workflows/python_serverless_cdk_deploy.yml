@@ -115,7 +115,7 @@ jobs:
       - name: Download cdk.out from S3
         env:
           BUCKET: ${{ secrets.deployment_bucket }}
-          KEY: ${{ needs.build.cdk_s3_key }}
+          KEY: ${{ needs.build.outputs.cdk_s3_key }}
         run: |
           aws s3 cp \
               s3://$BUCKET/$KEY \
@@ -159,7 +159,7 @@ jobs:
       - name: Download cdk.out from S3
         env:
           BUCKET: ${{ secrets.deployment_bucket }}
-          KEY: ${{ needs.build.cdk_s3_key }}
+          KEY: ${{ needs.build.outputs.cdk_s3_key }}
         run: |
           aws s3 cp \
               s3://$BUCKET/$KEY \
