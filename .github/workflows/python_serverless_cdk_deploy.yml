@@ -118,7 +118,7 @@ jobs:
       - name: Download cdk.out from S3
         run: |
           aws s3 cp \
-              s3://${{ needs.build.cdk_s3_bucket }}/${{ needs.build.cdk_s3_key }} \
+              s3://${{ secrets.deployment_bucket }}/${{ needs.build.cdk_s3_key }} \
               cdk.zip
           unzip cdk.zip
 
@@ -159,7 +159,7 @@ jobs:
       - name: Download cdk.out from S3
         run: |
           aws s3 cp \
-              s3://${{ needs.build.cdk_s3_bucket }}/${{ needs.build.cdk_s3_key }} \
+              s3://${{ secrets.deployment_bucket }}/${{ needs.build.cdk_s3_key }} \
               cdk.zip
           unzip cdk.zip
 
