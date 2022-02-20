@@ -5,6 +5,7 @@ on: [push]
 env:
   FORCE_COLOR: "1"
 
+jobs:
   deploy_serverless_example:
     name: Deploy Serverless Example
     uses: automartin5000/gha-examples/.github/workflows/python_serverless_cdk_deploy@main

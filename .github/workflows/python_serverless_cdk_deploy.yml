@@ -12,140 +12,144 @@ env:
 
 
 jobs:
-    build:
-        outputs:
-          cdk_s3_bucket: ${{ steps.cdk-upload.outputs.cdk_s3_bucket }}
-          cdk_s3_key: ${{ steps.cdk-upload.outputs.cdk_s3_key }}
+  build:
+    name: Serverless Build
+    runs-on: ubuntu-latest
 
-        runs-on: ubuntu-latest
-        defaults:
-            run:
-                working-directory: {{ inputs.dir }}
-        environment:
-            name: build
-            url: ${{ steps.cdk_deploy.outputs.app_url }}
-        steps:
-            - name: Checkout Code
-              uses: actions/checkout@v2
+    outputs:
+      cdk_s3_bucket: ${{ steps.cdk-upload.outputs.cdk_s3_bucket }}
+      cdk_s3_key: ${{ steps.cdk-upload.outputs.cdk_s3_key }}
 
-            - name: Configure AWS Environment
-              uses: aws-actions/configure-aws-credentials@v1
-              with:
-                aws-access-key-id: ${{ secrets.AWS_BUILD_DEMO_ACCESS_KEY_ID }}
-                aws-secret-access-key: ${{ secrets.AWS_BUILD_DEMO_SECRET_KEY }}
-                aws-region: us-east-1
+    defaults:
+      run:
+        working-directory: ${{ inputs.dir }}
+    environment:
+        name: build
+        url: ${{ steps.cdk_deploy.outputs.app_url }}
 
-            - name: Configure Python
-              uses: actions/setup-python@v2
-              with:
-                python-version: "3.9"
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
 
-            - name: Install App Dependencies
-              working-directory: {{ inputs.dir }}/runtime
-              run: |
-                pip install -r requirements.txt -t .
+      - name: Configure AWS Environment
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_BUILD_DEMO_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_BUILD_DEMO_SECRET_KEY }}
+          aws-region: us-east-1
 
-            - name: Install AWS CDK
-              run: |
-                npm install -g aws-cdk
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.9"
 
-            - name: Install CDK App Dependencies
-              working-directory: {{ inputs.dir }}/infrastructure
-              run: |
-                pip install -r requirements.txt
+      - name: Install App Dependencies
+        working-directory: ${{ inputs.dir }}/runtime
+        run: |
+          pip install -r requirements.txt -t .
 
-            - name: CDK Synth
-              working-directory: {{ inputs.dir }}/infrastructure
-              run: |
-                cdk synth
+      - name: Install AWS CDK
+        run: |
+          npm install -g aws-cdk
 
-            - name: CDK Diff Int
-              working-directory: {{ inputs.dir }}/infrastructure
-              run: |
-                cdk diff int --app cdk.out
+      - name: Install CDK App Dependencies
+        working-directory: ${{ inputs.dir }}/infrastructure
+        run: |
+          pip install -r requirements.txt
 
-            - name: Upload cdk.out to S3
-              id: cdk-upload
-              working-directory: {{ inputs.dir }}/infrastructure
-              run: |
-                zip -r cdk_out.zip cdk.out/
-                CDK_OUT_SHA=$(sha256sum cdk_out.zip | cut -d " " -f 1)
-                aws s3 cp \
-                    $CDK_OUT_SHA \
-                    s3://${{ secrets.DEPLOYMENT_BUCKET }}/$CDK_OUT_SHA
-                echo '::set-output name=cdk_s3_key::$CDK_OUT_SHA'
-                echo '::set-output name=cdk_s3_bucket::${{ secrets.DEPLOYMENT_BUCKET }}'
+      - name: CDK Synth
+        working-directory: ${{ inputs.dir }}/infrastructure
+        run: |
+          cdk synth
 
-    deploy_int:
-        runs-on: ubuntu-latest
-        needs: build
-        environment:
-            name: int
-            url: ${{ steps.cdk-deploy.outputs.app_url }}
-        steps:
-            - name: Configure AWS Environment
-              uses: aws-actions/configure-aws-credentials@v1
-              with:
-                aws-access-key-id: ${{ secrets.AWS_DEV_DEMO_ACCESS_KEY_ID }}
-                aws-secret-access-key: ${{ secrets.AWS_DEV_DEMO_SECRET_KEY }}
-                aws-region: us-east-1
+      - name: CDK Diff Int
+        working-directory: ${{ inputs.dir }}/infrastructure
+        run: |
+          cdk diff int --app cdk.out
 
-            - name: Install AWS CDK
-              run: |
-                npm install -g aws-cdk
+      - name: Upload cdk.out to S3
+        id: cdk-upload
+        working-directory: ${{ inputs.dir }}/infrastructure
+        run: |
+          zip -r cdk_out.zip cdk.out/
+          CDK_OUT_SHA=$(sha256sum cdk_out.zip | cut -d " " -f 1)
+          aws s3 cp \
+              $CDK_OUT_SHA \
+              s3://${{ secrets.DEPLOYMENT_BUCKET }}/$CDK_OUT_SHA
+          echo '::set-output name=cdk_s3_key::$CDK_OUT_SHA'
+          echo '::set-output name=cdk_s3_bucket::${{ secrets.DEPLOYMENT_BUCKET }}'
 
-            - name: Download cdk.out from S3
-                run: |
-                aws s3 cp \
-                    s3://${{ needs.build.cdk_s3_bucket }}/${{ needs.build.cdk_s3_key }} \
-                    cdk.zip
-                unzip cdk.zip
 
-            - name: CDK Deploy Int
-              id: cdk-deploy
-              run: |
-                cdk --app cdk.out/ deploy int --require-approval never --outputs-file cdk_deploy_outputs.json
-                apt install jq
-                APP_URL=$(jq -r '.. | objects | to_entries | .[] | select(.key == "AppURL") | .value' cdk_deploy_outputs.json)
-                echo '::set-output name=app_url::$APP_URL'
+  deploy_int:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+        name: int
+        url: ${{ steps.cdk-deploy.outputs.app_url }}
+    steps:
+      - name: Configure AWS Environment
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_DEV_DEMO_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_DEV_DEMO_SECRET_KEY }}
+          aws-region: us-east-1
 
-            # TODO: Upload this to somewhere visible
-            - name: CDK Diff Prod
-              run: |
-                cdk diff prod --app cdk.out
+      - name: Install AWS CDK
+        run: |
+          npm install -g aws-cdk
 
-            # TODO: Kick off async performance/int testing
+      - name: Download cdk.out from S3
+        run: |
+          aws s3 cp \
+              s3://${{ needs.build.cdk_s3_bucket }}/${{ needs.build.cdk_s3_key }} \
+              cdk.zip
+          unzip cdk.zip
 
-    deploy_prod:
-        runs-on: ubuntu-latest
-        nees: deploy_int
-        environment:
-            name: prod
-            url: ${{ steps.cdk_deploy.outputs.app_url }}
-        steps:
-            - name: Configure AWS Environment
-              uses: aws-actions/configure-aws-credentials@v1
-              with:
-                aws-access-key-id: ${{ secrets.AWS_PROD_DEMO_ACCESS_KEY_ID }}
-                aws-secret-access-key: ${{ secrets.AWS_PROD_DEMO_SECRET_KEY }}
-                aws-region: us-east-1
+      - name: CDK Deploy Int
+        id: cdk-deploy
+        run: |
+          cdk --app cdk.out/ deploy int --require-approval never --outputs-file cdk_deploy_outputs.json
+          apt install jq
+          APP_URL=$(jq -r '.. | objects | to_entries | .[] | select(.key == "AppURL") | .value' cdk_deploy_outputs.json)
+          echo '::set-output name=app_url::$APP_URL'
 
-            - name: Install AWS CDK
-              run: |
-                npm install -g aws-cdk
+      # TODO: Upload this to somewhere visible
+      - name: CDK Diff Prod
+        run: |
+          cdk diff prod --app cdk.out
 
-            - name: Download cdk.out from S3
-                run: |
-                aws s3 cp \
-                    s3://${{ needs.build.cdk_s3_bucket }}/${{ needs.build.cdk_s3_key }} \
-                    cdk.zip
-                unzip cdk.zip
+      # TODO: Kick off async performance/int testing
 
-            - name: CDK Deploy Prod
-              id: cdk-deploy
-              run: |
-                cdk --app cdk.out/ deploy prod --require-approval never --outputs-file cdk_deploy_outputs.json
-                apt install jq
-                APP_URL=$(jq -r '.. | objects | to_entries | .[] | select(.key == "AppURL") | .value' cdk_deploy_outputs.json)
-                echo '::set-output name=app_url::$APP_URL'
-                
+  deploy_prod:
+    runs-on: ubuntu-latest
+    needs: deploy_int
+    environment:
+      name: prod
+      url: ${{ steps.cdk_deploy.outputs.app_url }}
+    steps:
+      - name: Configure AWS Environment
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_PROD_DEMO_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_PROD_DEMO_SECRET_KEY }}
+          aws-region: us-east-1
+
+      - name: Install AWS CDK
+        run: |
+          npm install -g aws-cdk
+
+      - name: Download cdk.out from S3
+        run: |
+          aws s3 cp \
+              s3://${{ needs.build.cdk_s3_bucket }}/${{ needs.build.cdk_s3_key }} \
+              cdk.zip
+          unzip cdk.zip
+
+      - name: CDK Deploy Prod
+        id: cdk-deploy
+        run: |
+          cdk --app cdk.out/ deploy prod --require-approval never --outputs-file cdk_deploy_outputs.json
+          apt install jq
+          APP_URL=$(jq -r '.. | objects | to_entries | .[] | select(.key == "AppURL") | .value' cdk_deploy_outputs.json)
+          echo '::set-output name=app_url::$APP_URL'
+            
