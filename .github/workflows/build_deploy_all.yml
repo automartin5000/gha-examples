@@ -18,3 +18,4 @@ jobs:
         aws_secret_key_dev: ${{ secrets.AWS_DEV_DEMO_SECRET_KEY }}
         aws_access_key_id_prod: ${{ secrets.AWS_PROD_DEMO_ACCESS_KEY_ID }}
         aws_secret_key_prod: ${{ secrets.AWS_PROD_DEMO_SECRET_KEY }}
+        deployment_bucket: ${{ secrets.DEPLOYMENT_BUCKET }}
