@@ -90,7 +90,7 @@ jobs:
           aws s3 cp \
               cdk_out.zip \
               s3://${{ secrets.deployment_bucket }}/$CDK_OUT_SHA.zip
-          echo '::set-output name=cdk_s3_key::"$CDK_OUT_SHA.zip"'
+          echo "::set-output name=cdk_s3_key::$CDK_OUT_SHA.zip"
 
 
   deploy_int:
