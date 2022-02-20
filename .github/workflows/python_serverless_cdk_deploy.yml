@@ -26,6 +26,10 @@ on:
 env:
   FORCE_COLOR: "1"
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 
 jobs:
   build:
@@ -126,9 +130,8 @@ jobs:
         id: cdk_deploy
         run: |
           cdk --app cdk.out/ deploy int --require-approval never --outputs-file cdk_deploy_outputs.json
-          apt install jq
           APP_URL=$(jq -r '.. | objects | to_entries | .[] | select(.key == "AppURL") | .value' cdk_deploy_outputs.json)
-          echo '::set-output name=app_url::$APP_URL'
+          echo "::set-output name=app_url::$APP_URL"
 
       # TODO: Upload this to somewhere visible
       - name: CDK Diff Prod
@@ -170,7 +173,6 @@ jobs:
         id: cdk_deploy
         run: |
           cdk --app cdk.out/ deploy prod --require-approval never --outputs-file cdk_deploy_outputs.json
-          apt install jq
           APP_URL=$(jq -r '.. | objects | to_entries | .[] | select(.key == "AppURL") | .value' cdk_deploy_outputs.json)
-          echo '::set-output name=app_url::$APP_URL'
+          echo "::set-output name=app_url::$APP_URL"
             
