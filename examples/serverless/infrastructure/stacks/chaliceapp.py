@@ -37,6 +37,6 @@ class ChaliceApp(cdk.Stack):
                 name='SK', type=dynamodb.AttributeType.STRING
             ),
             removal_policy=cdk.RemovalPolicy.DESTROY)
-        cdk.CfnOutput(self, 'AppTableName',
+        cdk.CfnOutput(self, 'AppTable',
                       value=dynamodb_table.table_name)
         return dynamodb_table
